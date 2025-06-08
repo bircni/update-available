@@ -1,111 +1,128 @@
-#[cfg(feature = "async")]
-use reqwest::Client;
-
-use crate::data::{CratesResponse, GithubResponse, UpdateInfo};
+use crate::data::{UpdateAvailable, UpdateInfo};
 
 mod data;
+mod logic;
+
 #[cfg(test)]
 mod test;
 
-#[derive(Default)]
-pub struct UpdateAvailable {
-    name: String,
-    current_version: String,
+/// A user identifier for GitHub repositories.
+pub type User = String;
+
+/// Represents the source from which to check for updates.
+pub enum Source {
+    /// Check for updates on crates.io.
+    CratesIo,
+    /// Check for updates on GitHub for a specific user.
+    Github(User),
 }
 
-impl UpdateAvailable {
-    pub fn new(name: &str, current_version: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            current_version: current_version.to_string(),
-        }
+/// Prints update information for a package from the specified source.
+///
+/// This is a convenience function that checks for updates and prints the result
+/// directly to stdout if an update is available.
+///
+/// # Arguments
+///
+/// * `name` - The name of the package to check
+/// * `current_version` - The current version string (e.g., "1.0.0")
+/// * `source` - The source to check for updates
+///
+/// # Examples
+///
+/// ```rust
+/// use update_available::{print_check, Source};
+///
+/// // Check crates.io
+/// print_check("serde", "1.0.0", Source::CratesIo);
+///
+/// // Check GitHub
+/// print_check("my-repo", "0.1.0", Source::Github("username".to_string()));
+/// ```
+pub fn print_check(name: &str, current_version: &str, source: Source) {
+    let result = match source {
+        Source::CratesIo => check_crates_io(name, current_version),
+        Source::Github(user) => check_github(name, &user, current_version),
+    };
+    if let Ok(info) = result {
+        println!("{info}");
     }
-    pub fn name(&mut self, name: &str) {
-        self.name = name.to_string();
-    }
+}
 
-    pub fn version(&mut self, version: &str) {
-        self.current_version = version.to_string();
-    }
+/// Checks for updates on crates.io for the specified package.
+///
+/// This function queries the crates.io API to check if a newer version
+/// of the specified package is available.
+///
+/// # Arguments
+///
+/// * `name` - The name of the crate to check on crates.io
+/// * `current_version` - The current version string (e.g., "1.0.0")
+///
+/// # Returns
+///
+/// Returns a `Result<UpdateInfo, anyhow::Error>` containing update information
+/// if successful, or an error if the check fails.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The network request fails
+/// * The crates.io API returns an error
+/// * The version strings cannot be parsed
+/// * The response format is unexpected
+///
+/// # Examples
+///
+/// ```rust
+/// use update_available::check_crates_io;
+///
+/// match check_crates_io("serde", "1.0.0") {
+///     Ok(info) => println!("{}", info),
+///     Err(e) => eprintln!("Error checking for updates: {}", e),
+/// }
+/// ```
+pub fn check_crates_io(name: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
+    let update_available = UpdateAvailable::new(name, current_version);
+    update_available.crates_io()
+}
 
-    #[cfg(feature = "blocking")]
-    pub fn check_crates_io(&self) -> anyhow::Result<UpdateInfo> {
-        let url = format!("https://crates.io/api/v1/crates/{}", self.name);
-        let mut response = ureq::get(&url)
-            .header("User-Agent", "update-available-lib")
-            .call()?;
-
-        if response.status().is_success() {
-            let json: CratesResponse = response.body_mut().read_json()?;
-            let info = UpdateInfo::from_crates(json, &self.current_version)?;
-            Ok(info)
-        } else {
-            println!("Failed to fetch data from crates.io: {}", response.status());
-            anyhow::bail!("Failed to fetch data from crates.io: {}", response.status());
-        }
-    }
-
-    #[cfg(feature = "async")]
-    pub async fn check_crates_io_async(&self) -> anyhow::Result<UpdateInfo> {
-        let url = format!("https://crates.io/api/v1/crates/{}", self.name);
-        let client = Client::new();
-        let response = client
-            .get(&url)
-            .header("User-Agent", "update-available-lib")
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let json: CratesResponse = response.json().await?;
-            let info = UpdateInfo::from_crates(json, &self.current_version)?;
-            Ok(info)
-        } else {
-            println!("Failed to fetch data from crates.io: {}", response.status());
-            anyhow::bail!("Failed to fetch data from crates.io: {}", response.status());
-        }
-    }
-
-    #[cfg(feature = "blocking")]
-    pub fn check_github(&self, user: &str) -> anyhow::Result<UpdateInfo> {
-        let url = format!(
-            "https://api.github.com/repos/{user}/{}/releases/latest",
-            self.name
-        );
-        let mut response = ureq::get(url)
-            .header("User-Agent", "update-available-lib")
-            .call()?;
-
-        if response.status().is_success() {
-            let json: GithubResponse = response.body_mut().read_json()?;
-            let info = UpdateInfo::from_github(json, &self.current_version)?;
-            Ok(info)
-        } else {
-            println!("Failed to fetch data from GitHub: {}", response.status());
-            anyhow::bail!("Failed to fetch data from GitHub: {}", response.status());
-        }
-    }
-
-    #[cfg(feature = "async")]
-    pub async fn check_github_async(&self, user: &str) -> anyhow::Result<UpdateInfo> {
-        let url = format!(
-            "https://api.github.com/repos/{user}/{}/releases/latest",
-            self.name
-        );
-        // Erwartet eine GitHub-API-URL wie "https://api.github.com/repos/OWNER/REPO/releases/latest"
-        let client = Client::new();
-        let response = client
-            .get(&url)
-            .header("User-Agent", "update-available-lib")
-            .send()
-            .await?;
-
-        if response.status().is_success() {
-            let json: GithubResponse = response.json().await?;
-            let info = UpdateInfo::from_github(json, &self.current_version)?;
-            Ok(info)
-        } else {
-            println!("Failed to fetch data from GitHub: {}", response.status());
-            anyhow::bail!("Failed to fetch data from GitHub: {}", response.status());
-        }
-    }
+/// Checks for updates on GitHub for the specified repository.
+///
+/// This function queries the GitHub API to check if a newer version
+/// of the specified repository is available.
+///
+/// # Arguments
+///
+/// * `name` - The name of the repository to check
+/// * `user` - The GitHub username or organization that owns the repository
+/// * `current_version` - The current version string (e.g., "1.0.0")
+///
+/// # Returns
+///
+/// Returns a `Result<UpdateInfo, anyhow::Error>` containing update information
+/// if successful, or an error if the check fails.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The network request fails
+/// * The GitHub API returns an error
+/// * The version strings cannot be parsed
+/// * The response format is unexpected
+/// * The repository does not exist or has no releases
+///
+/// # Examples
+///
+/// ```rust
+/// use update_available::check_github;
+///
+/// match check_github("my-repo", "username", "1.0.0") {
+///     Ok(info) => println!("{}", info),
+///     Err(e) => eprintln!("Error checking for updates: {}", e),
+/// }
+/// ```
+pub fn check_github(name: &str, user: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
+    let update_available = UpdateAvailable::new(name, current_version);
+    update_available.github(user)
 }

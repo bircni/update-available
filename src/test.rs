@@ -13,7 +13,7 @@ fn display_update_available() {
         changelog: Some("Added new features and fixed bugs.".into()),
         url: String::from("https://crates.io/crates/serde"),
     };
-    println!("{}", update);
+    println!("{update}");
 }
 
 #[test]
@@ -25,31 +25,14 @@ fn display_no_update() {
         changelog: None,
         url: String::new(),
     };
-    println!("{}", update);
+    println!("{update}");
 }
 
 #[cfg(feature = "blocking")]
 #[test]
 fn test_crates_io_check() {
     let update = UpdateAvailable::new("cargo-wash", "0.1.0");
-    let result = update.check_crates_io();
-    assert!(
-        result.is_ok(),
-        "Failed to check crates.io: {:?}",
-        result.err()
-    );
-    let update_info = result.unwrap();
-    assert!(
-        update_info.is_update_available,
-        "Expected an update to be available"
-    );
-}
-
-#[cfg(feature = "async")]
-#[tokio::test]
-async fn test_crates_io_check_async() {
-    let update = UpdateAvailable::new("cargo-wash", "0.1.0");
-    let result = update.check_crates_io_async().await;
+    let result = update.crates_io();
     assert!(
         result.is_ok(),
         "Failed to check crates.io: {:?}",
@@ -65,7 +48,7 @@ async fn test_crates_io_check_async() {
 #[test]
 fn test_github_check() {
     let update = UpdateAvailable::new("cargo-wash", "0.1.0");
-    let result = update.check_github("bircni");
+    let result = update.github("bircni");
     assert!(result.is_ok(), "Failed to check GitHub: {:?}", result.err());
     let update_info = result.unwrap();
     assert!(
@@ -74,15 +57,12 @@ fn test_github_check() {
     );
 }
 
-#[cfg(feature = "async")]
-#[tokio::test]
-async fn test_github_check_async() {
-    let update = UpdateAvailable::new("cargo-wash", "0.1.0");
-    let result = update.check_github_async("bircni").await;
-    assert!(result.is_ok(), "Failed to check GitHub: {:?}", result.err());
-    let update_info = result.unwrap();
-    assert!(
-        update_info.is_update_available,
-        "Expected an update to be available"
-    );
+#[test]
+fn test_print_check_crates_io() {
+    print_check("cargo-wash", "0.1.0", Source::CratesIo);
+}
+
+#[test]
+fn test_print_check_github() {
+    print_check("cargo-wash", "0.1.0", Source::Github("bircni".to_owned()));
 }

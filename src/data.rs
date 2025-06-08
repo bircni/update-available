@@ -1,7 +1,14 @@
+#![expect(clippy::redundant_pub_crate, reason = "This is a library module")]
 use core::fmt;
 
 use semver::Version;
 use serde::Deserialize;
+
+#[derive(Default)]
+pub(crate) struct UpdateAvailable {
+    pub(crate) name: String,
+    pub(crate) current_version: String,
+}
 
 #[derive(Deserialize)]
 pub(crate) struct GithubResponse {
@@ -23,20 +30,20 @@ pub(crate) struct CrateInfo {
 }
 
 pub struct UpdateInfo {
-    pub(crate) is_update_available: bool,
-    pub(crate) latest_version: Version,
-    pub(crate) changelog: Option<String>,
-    pub(crate) url: String,
+    pub is_update_available: bool,
+    pub latest_version: Version,
+    pub changelog: Option<String>,
+    pub url: String,
 }
 
 impl UpdateInfo {
     pub(crate) fn new(
         latest_version: Version,
-        current_version: Version,
+        current_version: &Version,
         changelog: Option<String>,
         url: String,
     ) -> Self {
-        let is_update_available = latest_version > current_version;
+        let is_update_available = latest_version > *current_version;
         Self {
             is_update_available,
             latest_version,
@@ -53,7 +60,7 @@ impl UpdateInfo {
         let current_version = Version::parse(current_version)
             .map_err(|e| anyhow::anyhow!("Failed to parse current version: {}", e))?;
         let url = format!("https://crates.io/crates/{}", crates_response.info.name);
-        Ok(Self::new(latest_version, current_version, None, url))
+        Ok(Self::new(latest_version, &current_version, None, url))
     }
 
     pub(crate) fn from_github(
@@ -70,7 +77,7 @@ impl UpdateInfo {
             .map_err(|e| anyhow::anyhow!("Failed to parse current version: {}", e))?;
         Ok(Self::new(
             latest_version,
-            current_version,
+            &current_version,
             github_response.body,
             github_response.html_url,
         ))
@@ -89,11 +96,11 @@ impl fmt::Display for UpdateInfo {
                         continue;
                     }
                     if line.starts_with('-') || line.starts_with('*') {
-                        writeln!(f, "    {}", line)?;
+                        writeln!(f, "    {line}")?;
                     } else if line.starts_with("•") {
                         writeln!(f, "    {}", line.trim_start_matches('•'))?;
                     } else {
-                        writeln!(f, "    • {}", line)?;
+                        writeln!(f, "    • {line}")?;
                     }
                 }
                 if changelog
