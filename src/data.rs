@@ -11,7 +11,7 @@ pub(crate) struct UpdateAvailable {
 }
 
 #[derive(Deserialize)]
-pub(crate) struct GithubResponse {
+pub(crate) struct GiteaHubResponse {
     pub(crate) tag_name: String,
     pub(crate) body: Option<String>,
     pub(crate) html_url: String,
@@ -63,14 +63,14 @@ impl UpdateInfo {
         Ok(Self::new(latest_version, &current_version, None, url))
     }
 
-    pub(crate) fn from_github(
-        github_response: GithubResponse,
+    pub(crate) fn from_gitea_or_hub(
+        response: GiteaHubResponse,
         current_version: &str,
     ) -> anyhow::Result<Self> {
-        let latest_version = github_response
+        let latest_version = response
             .tag_name
             .strip_prefix("v")
-            .unwrap_or(&github_response.tag_name);
+            .unwrap_or(&response.tag_name);
         let latest_version = Version::parse(latest_version)
             .map_err(|e| anyhow::anyhow!("Failed to parse latest version: {}", e))?;
         let current_version = Version::parse(current_version)
@@ -78,8 +78,8 @@ impl UpdateInfo {
         Ok(Self::new(
             latest_version,
             &current_version,
-            github_response.body,
-            github_response.html_url,
+            response.body,
+            response.html_url,
         ))
     }
 }
