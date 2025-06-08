@@ -1,0 +1,20 @@
+[package]
+name = "update-available"
+version = "0.1.0"
+edition = "2024"
+exclude = ["examples/*"]
+
+[dependencies]
+anyhow = "1"
+reqwest = { version = "0.12", features = ["json"], optional = true }
+semver = { version = "1", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+ureq = { version = "3.0", features = ["json"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.45", features = ["macros", "rt-multi-thread"] }
+
+[features]
+default = ["async", "blocking"]
+blocking = ["ureq"]
+async = ["reqwest"]
