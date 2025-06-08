@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.1.1](https://github.com/bircni/update-available/compare/0.1.0..0.1.1) - 2025-06-08
+
+### Bug Fixes
+
+- improve update availability check in UpdateInfo (#3) - ([5904bd5](https://github.com/bircni/update-available/commit/5904bd5894956f3e439886e4f25c70bddcdd5ee7)) - Nicolas
+
 ## [0.1.0] - 2025-06-08
 
 ### Documentation
