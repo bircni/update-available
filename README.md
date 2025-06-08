@@ -3,6 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/update-available.svg)](https://crates.io/crates/update-available)
 [![Documentation](https://docs.rs/update-available/badge.svg)](https://docs.rs/update-available)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/bircni/update-available/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bircni/update-available/actions/workflows/ci.yml)
 
 A Rust library to check for updates of crates on crates.io or GitHub repositories. Get notified when newer versions of your dependencies are available with beautiful, formatted output.
 
@@ -22,6 +23,12 @@ Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
 update-available = "0.1.0"
+```
+
+or use `cargo add`:
+
+```bash
+cargo add update-available
 ```
 
 ## Quick Start
