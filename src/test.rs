@@ -1,8 +1,7 @@
 use semver::Version;
 
 use crate::data::UpdateInfo;
-
-use super::*;
+use crate::{Source, UpdateAvailable, print_check};
 
 #[test]
 fn display_update_available() {
@@ -28,7 +27,6 @@ fn display_no_update() {
     println!("{update}");
 }
 
-#[cfg(feature = "blocking")]
 #[test]
 fn test_crates_io_check() {
     let update = UpdateAvailable::new("cargo-wash", "0.1.0");
@@ -101,7 +99,5 @@ fn test_downgrade_misreported_as_update() {
     let latest = Version::parse("1.9.9").unwrap();
     let info = UpdateInfo::new(latest, &current, None, "url".into());
 
-    // ❌ This test will FAIL with the current logic.
-    // Because the current impl only checks inequality, it wrongly says an update is available.
     assert!(!info.is_update_available);
 }

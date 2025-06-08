@@ -4,12 +4,14 @@ use core::fmt;
 use semver::Version;
 use serde::Deserialize;
 
+/// Internal structure for managing update checks.
 #[derive(Default)]
 pub(crate) struct UpdateAvailable {
     pub(crate) name: String,
     pub(crate) current_version: String,
 }
 
+/// Response structure for GitHub/Gitea API calls.
 #[derive(Deserialize)]
 pub(crate) struct GiteaHubResponse {
     pub(crate) tag_name: String,
@@ -17,26 +19,48 @@ pub(crate) struct GiteaHubResponse {
     pub(crate) html_url: String,
 }
 
+/// Response structure for crates.io API calls.
 #[derive(Deserialize)]
 pub(crate) struct CratesResponse {
     #[serde(rename = "crate")]
     pub(crate) info: CrateInfo,
 }
 
+/// Crate information from crates.io.
 #[derive(Deserialize)]
 pub(crate) struct CrateInfo {
     pub(crate) max_version: Version,
     pub(crate) name: String,
 }
 
+/// Contains information about available updates for a package.
+///
+/// This structure provides all the necessary information about whether
+/// an update is available, including version details, changelog, and
+/// where to find more information.
 pub struct UpdateInfo {
+    /// Whether a newer version is available than the current one.
     pub is_update_available: bool,
+    /// The latest available version.
     pub latest_version: Version,
+    /// Optional changelog or release notes for the latest version.
     pub changelog: Option<String>,
+    /// URL where more information can be found (crates.io, GitHub, etc.).
     pub url: String,
 }
 
 impl UpdateInfo {
+    /// Creates a new `UpdateInfo` instance.
+    ///
+    /// Compares the latest version with the current version to determine
+    /// if an update is available.
+    ///
+    /// # Arguments
+    ///
+    /// * `latest_version` - The latest available version
+    /// * `current_version` - The currently installed version
+    /// * `changelog` - Optional changelog or release notes
+    /// * `url` - URL for more information about the package
     pub(crate) fn new(
         latest_version: Version,
         current_version: &Version,
@@ -61,6 +85,16 @@ impl UpdateInfo {
         }
     }
 
+    /// Creates an `UpdateInfo` from a crates.io API response.
+    ///
+    /// # Arguments
+    ///
+    /// * `crates_response` - The response from the crates.io API
+    /// * `current_version` - The current version string to compare against
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the current version string cannot be parsed.
     pub(crate) fn from_crates(
         crates_response: CratesResponse,
         current_version: &str,
@@ -72,6 +106,16 @@ impl UpdateInfo {
         Ok(Self::new(latest_version, &current_version, None, url))
     }
 
+    /// Creates an `UpdateInfo` from a GitHub or Gitea API response.
+    ///
+    /// # Arguments
+    ///
+    /// * `response` - The response from the GitHub or Gitea API
+    /// * `current_version` - The current version string to compare against
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the version strings cannot be parsed.
     pub(crate) fn from_gitea_or_hub(
         response: GiteaHubResponse,
         current_version: &str,
@@ -90,6 +134,16 @@ impl UpdateInfo {
             response.body,
             response.html_url,
         ))
+    }
+
+    /// Prints the update information if an update is available.
+    ///
+    /// This is a convenience method that only prints output when
+    /// `is_update_available` is true.
+    pub fn print(&self) {
+        if self.is_update_available {
+            println!("{self}");
+        }
     }
 }
 
