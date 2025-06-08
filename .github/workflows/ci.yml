@@ -50,6 +50,17 @@ jobs:
       - name: Run tests
         run: cargo test
 
+  cargo-deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          rust-version: "stable"
+          log-level: error
+          command: check
+
   publish-check:
     name: Publish Check
     runs-on: ubuntu-latest
