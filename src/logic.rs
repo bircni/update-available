@@ -1,6 +1,6 @@
 use crate::{
     UpdateAvailable,
-    data::{CratesResponse, GithubResponse, UpdateInfo},
+    data::{CratesResponse, GiteaHubResponse, UpdateInfo},
 };
 
 impl UpdateAvailable {
@@ -40,12 +40,32 @@ impl UpdateAvailable {
             .call()?;
 
         if response.status().is_success() {
-            let json: GithubResponse = response.body_mut().read_json()?;
-            let info = UpdateInfo::from_github(json, &self.current_version)?;
+            let json: GiteaHubResponse = response.body_mut().read_json()?;
+            let info = UpdateInfo::from_gitea_or_hub(json, &self.current_version)?;
             Ok(info)
         } else {
             println!("Failed to fetch data from GitHub: {}", response.status());
             anyhow::bail!("Failed to fetch data from GitHub: {}", response.status());
+        }
+    }
+
+    #[cfg(feature = "blocking")]
+    pub(crate) fn gitea(&self, user: &str, gitea_url: &str) -> anyhow::Result<UpdateInfo> {
+        let url = format!(
+            "{gitea_url}/api/v1/repos/{user}/{}/releases/latest",
+            self.name
+        );
+        let mut response = ureq::get(url)
+            .header("User-Agent", "update-available-lib")
+            .call()?;
+
+        if response.status().is_success() {
+            let json: GiteaHubResponse = response.body_mut().read_json()?;
+            let info = UpdateInfo::from_gitea_or_hub(json, &self.current_version)?;
+            Ok(info)
+        } else {
+            println!("Failed to fetch data from Gitea: {}", response.status());
+            anyhow::bail!("Failed to fetch data from Gitea: {}", response.status());
         }
     }
 }

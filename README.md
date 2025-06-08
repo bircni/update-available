@@ -54,9 +54,20 @@ match check_github("serde", "serde-rs", "1.0.0") {
 }
 ```
 
-### Convenience function for direct printing
+### Check for Gitea repository updates
 
 ```rust
+use update_available::check_gitea;
+
+match check_gitea("my-repo", "username", "https://gitea.example.com", "1.0.0") {
+    Ok(info) => println!("{}", info),
+    Err(e) => eprintln!("Error: {}", e),
+}
+```
+
+### Convenience function for direct printing
+
+````rust
 use update_available::{print_check, Source};
 
 // Check crates.io and print result
@@ -64,7 +75,12 @@ print_check("serde", "1.0.0", Source::CratesIo);
 
 // Check GitHub and print result
 print_check("my-repo", "0.1.0", Source::Github("username".to_string()));
-```
+
+// Check Gitea and print result
+print_check("my-repo", "0.1.0", Source::Gitea {
+    user: "username".to_string(),
+    base_url: "https://gitea.example.com".to_string(),
+});
 
 ## Example Output
 
@@ -78,7 +94,7 @@ When an update is available, you'll see beautifully formatted output like this:
     • Improved performance by 15%
     • Added new serialization features
 🌐  More info: https://crates.io/crates/example
-```
+````
 
 When you're already using the latest version:
 
@@ -158,4 +174,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [ ] Async support with `tokio` and `reqwest`
 - [ ] Custom output formatting
-- [ ] Support for other sources (e.g. GitLab, Gitea)
+- [ ] Support for other sources (e.g. GitLab)
+- [x] Support for Gitea repositories

@@ -66,3 +66,13 @@ fn test_print_check_crates_io() {
 fn test_print_check_github() {
     print_check("cargo-wash", "0.1.0", Source::Github("bircni".to_owned()));
 }
+
+#[ignore = "Gitea tests are ignored by default, as they require a valid Gitea URL and user."]
+#[test]
+fn test_print_check_gitea() {
+    print_check(
+        "cargo-wash",
+        "0.1.0",
+        Source::Gitea("bircni".to_owned(), "https://gitea.example.com".to_owned()),
+    );
+}
