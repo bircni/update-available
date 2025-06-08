@@ -54,7 +54,7 @@ pub fn print_check(name: &str, current_version: &str, source: Source) {
         }
     };
     if let Ok(info) = result {
-        println!("{info}");
+        info.print();
     }
 }
 
