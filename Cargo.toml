@@ -3,12 +3,12 @@ name = "update-available"
 version = "0.1.0"
 edition = "2024"
 authors = ["bircni"]
-description = "A library to check for updates of a crate on crates.io or GitHub."
+description = "A library to check for updates of a crate on crates.io, GitHub or Gitea."
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/bircni/update-available"
 exclude = ["examples/*"]
-keywords = ["update", "available", "crates.io", "github", "version", "semver"]
+keywords = ["update", "available", "gitea", "github", "version"]
 
 [dependencies]
 anyhow = "1"
