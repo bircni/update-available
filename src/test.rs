@@ -76,3 +76,32 @@ fn test_print_check_gitea() {
         Source::Gitea("bircni".to_owned(), "https://gitea.example.com".to_owned()),
     );
 }
+
+#[test]
+fn test_no_update_same_version() {
+    let current = Version::parse("1.2.3").unwrap();
+    let latest = Version::parse("1.2.3").unwrap();
+    let info = UpdateInfo::new(latest, &current, None, "url".into());
+
+    assert!(!info.is_update_available);
+}
+
+#[test]
+fn test_update_newer_version() {
+    let current = Version::parse("1.2.3").unwrap();
+    let latest = Version::parse("1.2.4").unwrap();
+    let info = UpdateInfo::new(latest, &current, None, "url".into());
+
+    assert!(info.is_update_available);
+}
+
+#[test]
+fn test_downgrade_misreported_as_update() {
+    let current = Version::parse("2.0.0").unwrap();
+    let latest = Version::parse("1.9.9").unwrap();
+    let info = UpdateInfo::new(latest, &current, None, "url".into());
+
+    // ❌ This test will FAIL with the current logic.
+    // Because the current impl only checks inequality, it wrongly says an update is available.
+    assert!(!info.is_update_available);
+}

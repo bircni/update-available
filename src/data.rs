@@ -43,7 +43,16 @@ impl UpdateInfo {
         changelog: Option<String>,
         url: String,
     ) -> Self {
-        let is_update_available = latest_version > *current_version;
+        let is_update_available = (
+            latest_version.major,
+            latest_version.minor,
+            latest_version.patch,
+        ) > (
+            current_version.major,
+            current_version.minor,
+            current_version.patch,
+        );
+
         Self {
             is_update_available,
             latest_version,
