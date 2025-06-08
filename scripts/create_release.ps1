@@ -1,5 +1,5 @@
 # Enable push with follow tags
-git config --global push.followTags true
+git config push.followTags true
 
 # if current branch is not main, exit
 $current_branch = git rev-parse --abbrev-ref HEAD
@@ -44,7 +44,7 @@ Write-Host "Generating changelog..."
 git cliff --output CHANGELOG.md -t $version
 Write-Host "Changelog generated successfully."
 # Ask for confirmation before committing
-Write-Host "Please review the changes in Cargo.tomland CHANGELOG.md."
+Write-Host "Please review the changes in Cargo.toml and CHANGELOG.md."
 $confirmation = Read-Host "Do you want to commit the changes? (y/n)"
 if ($confirmation -ne 'y') {
     Write-Host "Changes not committed. Exiting."
