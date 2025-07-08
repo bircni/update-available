@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.2.0](https://github.com/bircni/update-available/compare/0.1.2..0.2.0) - 2025-07-08
+
+### Features
+
+- intodrucing "force output" to always print even if no updates are available - ([ee15cd5](https://github.com/bircni/update-available/commit/ee15cd5c091be31d4e43f896b71ef3432744ce70)) - Nicolas
+
 ## [0.1.2](https://github.com/bircni/update-available/compare/0.1.1..0.1.2) - 2025-06-08
 
 ### Documentation
