@@ -7,7 +7,7 @@ mod logic;
 mod test;
 
 /// A user identifier for GitHub repositories.
-pub type User = String;
+type User = String;
 
 /// Represents the source from which to check for updates.
 pub enum Source {
@@ -17,6 +17,36 @@ pub enum Source {
     Github(User),
     /// Check for updates on Gitea for a specific user and Gitea URL.
     Gitea(User, String),
+}
+
+/// Prints update information for a package from the specified source.
+///
+/// This is a convenience function that checks for updates and prints the result
+/// directly to stdout even if no update is available. To show the user
+/// the current status of the package, including whether an update is available.
+///
+/// # Arguments
+///
+/// * `name` - The name of the package to check
+/// * `current_version` - The current version string (e.g., "1.0.0")
+/// * `source` - The source to check for updates
+///
+/// # Examples
+///
+/// ```rust
+/// use update_available::{print_check_force, Source};
+///
+/// // Check crates.io
+/// print_check_force("serde", "1.0.0", Source::CratesIo);
+///
+/// // Check GitHub
+/// print_check_force("my-repo", "0.1.0", Source::Github("username".to_string()));
+///
+/// // Check Gitea
+/// print_check_force("my-repo", "0.1.0", Source::Gitea("username".to_string(), "https://gitea.example.com".to_string()));
+/// ```
+pub fn print_check_force(name: &str, current_version: &str, source: Source) {
+    print_check_internal(name, current_version, source, true);
 }
 
 /// Prints update information for a package from the specified source.
@@ -45,16 +75,30 @@ pub enum Source {
 /// print_check("my-repo", "0.1.0", Source::Gitea("username".to_string(), "https://gitea.example.com".to_string()));
 /// ```
 pub fn print_check(name: &str, current_version: &str, source: Source) {
+    print_check_internal(name, current_version, source, false);
+}
+
+/// Prints update information for a package from the specified source.
+///
+/// This is a convenience function that checks for updates and prints the result
+/// directly to stdout if an update is available.
+///
+/// # Arguments
+///
+/// * `name` - The name of the package to check
+/// * `current_version` - The current version string (e.g., "1.0.0")
+/// * `source` - The source to check for updates
+fn print_check_internal(name: &str, current_version: &str, source: Source, always_print: bool) {
     let result = match source {
         Source::CratesIo => check_crates_io(name, current_version),
         Source::Github(user) => check_github(name, &user, current_version),
-        Source::Gitea(user, gitea_url) => {
-            let update_available = UpdateAvailable::new(name, current_version);
-            update_available.gitea(&user, &gitea_url)
-        }
+        Source::Gitea(user, gitea_url) => check_gitea(name, &user, &gitea_url, current_version),
     };
-    if let Ok(info) = result {
-        info.print();
+    match result {
+        Ok(info) if info.is_update_available => info.print(),
+        Ok(_) if always_print => println!("No updates available for {name}@{current_version}"),
+        Err(e) if always_print => eprintln!("Error checking for updates: {e}"),
+        _ => {}
     }
 }
 
@@ -83,7 +127,7 @@ pub fn print_check(name: &str, current_version: &str, source: Source) {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```ignore
 /// use update_available::check_crates_io;
 ///
 /// match check_crates_io("serde", "1.0.0") {
@@ -91,7 +135,7 @@ pub fn print_check(name: &str, current_version: &str, source: Source) {
 ///     Err(e) => eprintln!("Error checking for updates: {}", e),
 /// }
 /// ```
-pub fn check_crates_io(name: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
+fn check_crates_io(name: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
     let update_available = UpdateAvailable::new(name, current_version);
     update_available.crates_io()
 }
@@ -123,7 +167,7 @@ pub fn check_crates_io(name: &str, current_version: &str) -> anyhow::Result<Upda
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```ignore
 /// use update_available::check_github;
 ///
 /// match check_github("my-repo", "username", "1.0.0") {
@@ -131,7 +175,7 @@ pub fn check_crates_io(name: &str, current_version: &str) -> anyhow::Result<Upda
 ///     Err(e) => eprintln!("Error checking for updates: {}", e),
 /// }
 /// ```
-pub fn check_github(name: &str, user: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
+fn check_github(name: &str, user: &str, current_version: &str) -> anyhow::Result<UpdateInfo> {
     let update_available = UpdateAvailable::new(name, current_version);
     update_available.github(user)
 }
@@ -164,7 +208,7 @@ pub fn check_github(name: &str, user: &str, current_version: &str) -> anyhow::Re
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```ignore
 /// use update_available::check_gitea;
 ///
 /// match check_gitea("my-repo", "username", "https://gitea.example.com", "1.0.0") {
@@ -172,7 +216,7 @@ pub fn check_github(name: &str, user: &str, current_version: &str) -> anyhow::Re
 ///     Err(e) => eprintln!("Error checking for updates: {}", e),
 /// }
 /// ```
-pub fn check_gitea(
+fn check_gitea(
     name: &str,
     user: &str,
     gitea_url: &str,

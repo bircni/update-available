@@ -1,19 +1,26 @@
-#![expect(clippy::unwrap_used, reason = "This is an example code")]
 use update_available::Source;
 
 fn main() {
-    let cratesio_infos = update_available::check_crates_io("serde", "1.0.0").unwrap();
-    // do something with the infos
-    println!(
-        "Crates.io Update Available: {}",
-        cratesio_infos.is_update_available
+    // even if the version is not available, it will print a message
+    update_available::print_check_force("serde", "1.0.0", Source::CratesIo);
+    update_available::print_check_force("serde-rs", "1.0.0", Source::Github("serde-rs".to_owned()));
+    update_available::print_check_force(
+        "my-repo",
+        "0.1.0",
+        Source::Gitea(
+            "username".to_owned(),
+            "https://gitea.example.com".to_owned(),
+        ),
     );
-    let github_infos = update_available::check_github("serde", "serde-rs", "1.0.0").unwrap();
-    // do something with the github infos
-    println!(
-        "GitHub Update Available: {}",
-        github_infos.is_update_available
-    );
-    // Print the update check results
+    // this only prints if an update is available
     update_available::print_check("serde", "1.0.0", Source::CratesIo);
+    update_available::print_check("serde-rs", "1.0.0", Source::Github("serde-rs".to_owned()));
+    update_available::print_check(
+        "my-repo",
+        "0.1.0",
+        Source::Gitea(
+            "username".to_owned(),
+            "https://gitea.example.com".to_owned(),
+        ),
+    );
 }
