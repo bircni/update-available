@@ -135,16 +135,6 @@ impl UpdateInfo {
             response.html_url,
         ))
     }
-
-    /// Prints the update information if an update is available.
-    ///
-    /// This is a convenience method that only prints output when
-    /// `is_update_available` is true.
-    pub fn print(&self) {
-        if self.is_update_available {
-            println!("{self}");
-        }
-    }
 }
 
 impl fmt::Display for UpdateInfo {

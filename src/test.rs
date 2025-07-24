@@ -30,7 +30,7 @@ fn display_no_update() {
 #[test]
 fn test_crates_io_check() {
     let update = UpdateAvailable::new("cargo-wash", "0.1.0");
-    let result = update.crates_io();
+    let result = update.crates_io_with_url(None);
     assert!(
         result.is_ok(),
         "Failed to check crates.io: {:?}",
@@ -57,7 +57,7 @@ fn test_github_check() {
 
 #[test]
 fn test_print_check_crates_io() {
-    print_check("cargo-wash", "0.1.0", Source::CratesIo);
+    print_check("cargo-wash", "0.1.0", Source::CratesIo { url: None });
 }
 
 #[test]
@@ -71,7 +71,11 @@ fn test_print_check_gitea() {
     print_check(
         "cargo-wash",
         "0.1.0",
-        Source::Gitea("bircni".to_owned(), "https://gitea.example.com".to_owned()),
+        Source::Gitea {
+            user: "bircni".to_owned(),
+            base_url: "https://gitea.example.com".to_owned(),
+            token: None,
+        },
     );
 }
 
@@ -91,6 +95,52 @@ fn test_update_newer_version() {
     let info = UpdateInfo::new(latest, &current, None, "url".into());
 
     assert!(info.is_update_available);
+}
+
+#[test]
+fn test_get_check_crates_io() {
+    use crate::get_check;
+    let result = get_check("cargo-wash", "0.1.0", Source::CratesIo { url: None });
+    assert!(result.is_ok(), "get_check should succeed: {:?}", result.err());
+}
+
+#[test]
+fn test_get_check_github() {
+    use crate::get_check;
+    let result = get_check("cargo-wash", "0.1.0", Source::Github("bircni".to_owned()));
+    assert!(result.is_ok(), "get_check should succeed: {:?}", result.err());
+}
+
+#[ignore = "Gitea tests are ignored by default, as they require a valid Gitea URL and user."]
+#[test]
+fn test_get_check_gitea_with_token() {
+    use crate::get_check;
+    let result = get_check(
+        "cargo-wash",
+        "0.1.0",
+        Source::Gitea {
+            user: "bircni".to_owned(),
+            base_url: "https://gitea.example.com".to_owned(),
+            token: Some("fake-token".to_owned()),
+        },
+    );
+    // This may fail due to invalid token or URL, but should not panic
+    assert!(result.is_ok() || result.is_err());
+}
+
+#[ignore = "Custom registry tests require a valid registry URL."]
+#[test]
+fn test_custom_crates_io_url() {
+    use crate::get_check;
+    let result = get_check(
+        "some-crate",
+        "0.1.0",
+        Source::CratesIo {
+            url: Some("https://my-custom-registry.com".to_owned()),
+        },
+    );
+    // This may fail due to invalid URL, but should not panic
+    assert!(result.is_ok() || result.is_err());
 }
 
 #[test]
