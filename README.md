@@ -36,16 +36,11 @@ cargo add update-available
 ### Check for crates.io updates
 
 ```rust
-use update_available::check_crates_io;
+use update_available::{get_check, Source};
 
-match check_crates_io("serde", "1.0.0") {
-    Ok(info) => {
-        if info.is_update_available {
-            println!("{}", info);
-        } else {
-            println!("You're using the latest version!");
-        }
-    }
+match get_check("serde", "1.0.0", Source::CratesIo { url: None }) {
+    Ok(Some(info)) => println!("Update available:\n{}", info),
+    Ok(None) => println!("No update available"),
     Err(e) => eprintln!("Error checking for updates: {}", e),
 }
 ```
@@ -53,10 +48,11 @@ match check_crates_io("serde", "1.0.0") {
 ### Check for GitHub repository updates
 
 ```rust
-use update_available::check_github;
+use update_available::{get_check, Source};
 
-match check_github("serde", "serde-rs", "1.0.0") {
-    Ok(info) => println!("{}", info),
+match get_check("my-repo", "1.0.0", Source::Github("username".to_string())) {
+    Ok(Some(info)) => println!("Update available:\n{}", info),
+    Ok(None) => println!("No update available"),
     Err(e) => eprintln!("Error: {}", e),
 }
 ```
@@ -64,30 +60,51 @@ match check_github("serde", "serde-rs", "1.0.0") {
 ### Check for Gitea repository updates
 
 ```rust
-use update_available::check_gitea;
+use update_available::{get_check, Source};
 
-match check_gitea("my-repo", "username", "https://gitea.example.com", "1.0.0") {
-    Ok(info) => println!("{}", info),
+match get_check("my-repo", "1.0.0", Source::Gitea {
+    user: "username".to_string(),
+    base_url: "https://gitea.example.com".to_string(),
+    token: Some("your-auth-token".to_string()), // Optional authentication token
+}) {
+    Ok(Some(info)) => println!("Update available:\n{}", info),
+    Ok(None) => println!("No update available"),
+    Err(e) => eprintln!("Error: {}", e),
+}
+```
+
+### Check for updates from custom registry (e.g., kellnr)
+
+```rust
+use update_available::{get_check, Source};
+
+match get_check("my-crate", "1.0.0", Source::CratesIo { 
+    url: Some("https://my-kellnr-registry.com".to_string())
+}) {
+    Ok(Some(info)) => println!("Update available:\n{}", info),
+    Ok(None) => println!("No update available"),
     Err(e) => eprintln!("Error: {}", e),
 }
 ```
 
 ### Convenience function for direct printing
 
-````rust
+```rust
 use update_available::{print_check, Source};
 
 // Check crates.io and print result
-print_check("serde", "1.0.0", Source::CratesIo);
+print_check("serde", "1.0.0", Source::CratesIo { url: None });
 
 // Check GitHub and print result
 print_check("my-repo", "0.1.0", Source::Github("username".to_string()));
 
-// Check Gitea and print result
+// Check Gitea with token and print result
 print_check("my-repo", "0.1.0", Source::Gitea {
     user: "username".to_string(),
     base_url: "https://gitea.example.com".to_string(),
+    token: Some("your-token".to_string()),
 });
+```
 
 ## Example Output
 
@@ -113,14 +130,17 @@ When you're already using the latest version:
 
 ### Functions
 
-- **`check_crates_io(name, current_version)`** - Check for updates on crates.io
-- **`check_github(name, user, current_version)`** - Check for updates on GitHub
-- **`print_check(name, current_version, source)`** - Convenience function that prints results directly
+- **`get_check(name, current_version, source)`** - Check for updates and return formatted string
+- **`print_check(name, current_version, source)`** - Convenience function that prints results directly if update available
+- **`print_check_force(name, current_version, source)`** - Convenience function that always prints results
 
 ### Types
 
 - **`UpdateInfo`** - Contains update information including version details and changelog
-- **`Source`** - Enum for specifying update source (CratesIo or Github)
+- **`Source`** - Enum for specifying update source:
+  - `CratesIo { url: Option<String> }` - Check crates.io or custom registry
+  - `Github(String)` - Check GitHub repository
+  - `Gitea { user: String, base_url: String, token: Option<String> }` - Check Gitea repository with optional auth
 
 ### Properties of `UpdateInfo`
 
